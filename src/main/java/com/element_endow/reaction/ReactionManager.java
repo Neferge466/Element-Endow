@@ -40,22 +40,28 @@ public class ReactionManager extends SimpleJsonResourceReloadListener {
         ElementEndow.LOGGER.info("Loaded {} reaction configurations", reactions.size());
     }
 
-    public Optional<ReactionResult> processInternalReaction(Player player, List<String> activeElements) {
+    public List<ReactionResult> processInternalReaction(Player player, List<String> activeElements) {
+        List<ReactionResult> results = new ArrayList<>();
+
         for (ReactionConfig config : reactions.values()) {
             if (config.getType() == ReactionType.INTERNAL) {
                 for (ReactionEntry entry : config.getReactions()) {
                     if (matchesElements(activeElements, entry.getMatchElements())) {
                         double average = calculateAverageAttributeValue(player, entry.getMatchElements());
                         double multiplier = average * entry.getRate();
-                        return Optional.of(new ReactionResult(multiplier, entry.getEffect(), config.getKey()));
+                        results.add(new ReactionResult(multiplier, entry.getEffect(), config.getKey()));
+                        ElementEndow.LOGGER.debug("Found internal reaction: {} with multiplier: {}", config.getKey(), multiplier);
                     }
                 }
             }
         }
-        return Optional.empty();
+
+        return results;
     }
 
-    public Optional<InducedReactionResult> processInducedReaction(Player attacker, LivingEntity target, String attackingElement) {
+    public List<InducedReactionResult> processInducedReaction(Player attacker, LivingEntity target, String attackingElement) {
+        List<InducedReactionResult> results = new ArrayList<>();
+
         for (ReactionConfig config : reactions.values()) {
             if (config.getType() == ReactionType.INDUCED) {
                 for (ReactionEntry entry : config.getReactions()) {
@@ -66,16 +72,19 @@ public class ReactionManager extends SimpleJsonResourceReloadListener {
                                 ElementAttributeHelper.getElementValue(target, targetElement) > 0) {
                             double[] rates = entry.getRateArray();
                             if (rates != null && rates.length == 2) {
-                                return Optional.of(new InducedReactionResult(
+                                results.add(new InducedReactionResult(
                                         rates[0], rates[1], entry.getEffect(), config.getKey()
                                 ));
+                                ElementEndow.LOGGER.debug("Found induced reaction: {} with rates: [{}, {}]",
+                                        config.getKey(), rates[0], rates[1]);
                             }
                         }
                     }
                 }
             }
         }
-        return Optional.empty();
+
+        return results;
     }
 
     private boolean matchesElements(List<String> activeElements, List<String> requiredElements) {

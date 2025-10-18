@@ -40,7 +40,7 @@ public class ElementAttributeHelper {
     @SubscribeEvent
     public static void onPlayerJoin(EntityJoinLevelEvent event) {
         if (event.getEntity() instanceof Player player) {
-            // 验证属性是否存在
+            //验证属性是否存在
             for (var entry : ElementRegistry.getRegisteredElements().entrySet()) {
                 var attribute = entry.getValue().get();
                 if (player.getAttribute(attribute) == null) {
@@ -55,7 +55,6 @@ public class ElementAttributeHelper {
         Player original = event.getOriginal();
         Player newPlayer = event.getEntity();
 
-        // 复制属性值
         for (var entry : ElementRegistry.getRegisteredElements().entrySet()) {
             double value = getElementValue(original, entry.getKey());
             setElementBaseValue(newPlayer, entry.getKey(), value);

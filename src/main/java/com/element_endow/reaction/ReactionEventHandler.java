@@ -31,12 +31,20 @@ public class ReactionEventHandler {
             if (attackingElement != null) {
                 ReactionManager manager = ElementEndow.getReactionManager();
                 if (manager != null) {
-                    manager.processInducedReaction(attacker, target, attackingElement).ifPresent(result -> {
+                    List<InducedReactionResult> results = manager.processInducedReaction(attacker, target, attackingElement);
+                    if (!results.isEmpty()) {
                         float originalDamage = event.getAmount();
-                        float modifiedDamage = (float) (originalDamage * result.getDamageMultiplier() / result.getDefenseMultiplier());
+                        float modifiedDamage = originalDamage;
+
+                        //应用所有匹配的induced反应
+                        for (InducedReactionResult result : results) {
+                            modifiedDamage = (float) (modifiedDamage * result.getDamageMultiplier() / result.getDefenseMultiplier());
+                            applyEffects(attacker, target, result.getEffect());
+                            ElementEndow.LOGGER.info("Applied induced reaction: {}", result.getReactionKey());
+                        }
+
                         event.setAmount(modifiedDamage);
-                        applyEffects(attacker, target, result.getEffect());
-                    });
+                    }
                 }
             }
         }
@@ -49,9 +57,15 @@ public class ReactionEventHandler {
             if (!activeElements.isEmpty()) {
                 ReactionManager manager = ElementEndow.getReactionManager();
                 if (manager != null) {
-                    manager.processInternalReaction(player, activeElements).ifPresent(result -> {
-                        applyInternalEffects(player, result);
-                    });
+                    List<ReactionResult> results = manager.processInternalReaction(player, activeElements);
+                    if (!results.isEmpty()) {
+                        //应用所有匹配的internal反应
+                        for (ReactionResult result : results) {
+                            applyInternalEffects(player, result);
+                            ElementEndow.LOGGER.info("Applied internal reaction: {} with multiplier: {}",
+                                    result.getReactionKey(), result.getMultiplier());
+                        }
+                    }
                 }
             }
         }
@@ -83,7 +97,7 @@ public class ReactionEventHandler {
     }
 
     private static void applyEffects(Player attacker, LivingEntity target, ReactionEffect effect) {
-        // 对目标施加负面效果
+        //对目标施加效果
         for (MobEffectInstance effectInstance : effect.getAfflictEffects()) {
             target.addEffect(new MobEffectInstance(
                     effectInstance.getEffect(),
@@ -94,7 +108,7 @@ public class ReactionEventHandler {
             ));
         }
 
-        // 对攻击者施加增益效果
+        //对攻击者施加效果
         for (MobEffectInstance effectInstance : effect.getEmpowerEffects()) {
             attacker.addEffect(new MobEffectInstance(
                     effectInstance.getEffect(),

@@ -13,12 +13,10 @@ public class GlobalAttributeHandler {
 
     @SubscribeEvent
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
-        // 获取所有注册的元素属性
+        //获取所有注册的元素属性
         var elements = ElementRegistry.getRegisteredElements();
-
-        // 只为有默认属性的生物实体（LivingEntity）添加元素属性
+        //只为LivingEntity添加元素属性
         for (EntityType<? extends LivingEntity> entityType : event.getTypes()) {
-            // DefaultAttributes.hasSupplier(entityType) 确保是LivingEntity
             if (DefaultAttributes.hasSupplier(entityType)) {
                 for (var entry : elements.entrySet()) {
                     Attribute attribute = entry.getValue().get();
