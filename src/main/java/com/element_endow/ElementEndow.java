@@ -22,17 +22,21 @@ public class ElementEndow {
         instance = this;
 
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+
         ElementRegistry.ATTRIBUTES.register(modBus);
 
         MinecraftForge.EVENT_BUS.addListener(this::onAddReloadListeners);
 
-        LOGGER.info("Element Endow mod initialized");
+        LOGGER.info("Element Endow mod initialized with {} elements",
+                ElementRegistry.getRegisteredElements().size());
     }
 
     private void onAddReloadListeners(AddReloadListenerEvent event) {
+
         reactionManager = new ReactionManager();
         event.addListener(reactionManager);
-        LOGGER.info("Reaction system reload listener registered");
+
+        LOGGER.info("Registered element config and reaction system reload listeners");
     }
 
     public static ReactionManager getReactionManager() {
