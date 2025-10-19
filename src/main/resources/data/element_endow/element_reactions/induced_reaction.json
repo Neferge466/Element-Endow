@@ -1,6 +1,6 @@
 {
   "key": "elemental_combat",
-  "type": "INDUCED",
+  "type": "induced",
   "reactions": [
     {
       "two_match": ["element_endow:fire", "element_endow:ice"],

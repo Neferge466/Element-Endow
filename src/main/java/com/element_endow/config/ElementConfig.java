@@ -16,12 +16,7 @@ public class ElementConfig {
                 .comment("Registered element attributes, format: modid:element_name")
                 .defineList("element_list",
                         Arrays.asList(
-                                "element_endow:fire",
-                                "element_endow:water",
-                                "element_endow:earth",
-                                "element_endow:air",
-                                "element_endow:lightning",
-                                "element_endow:ice"
+
                         ),
                         obj -> obj instanceof String
                 );

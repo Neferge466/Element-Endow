@@ -27,23 +27,37 @@ public class ReactionEventHandler {
         LivingEntity target = event.getEntity();
 
         if (source.getDirectEntity() instanceof Player attacker) {
+            //处理诱发反应
             String attackingElement = getAttackingElement(attacker);
             if (attackingElement != null) {
                 ReactionManager manager = ElementEndow.getReactionManager();
                 if (manager != null) {
-                    List<InducedReactionResult> results = manager.processInducedReaction(attacker, target, attackingElement);
-                    if (!results.isEmpty()) {
-                        float originalDamage = event.getAmount();
-                        float modifiedDamage = originalDamage;
+                    List<InducedReactionResult> inducedResults = manager.processInducedReaction(attacker, target, attackingElement);
+                    if (!inducedResults.isEmpty()) {
+                        float modifiedDamage = event.getAmount();
 
-                        //应用所有匹配的induced反应
-                        for (InducedReactionResult result : results) {
+                        for (InducedReactionResult result : inducedResults) {
                             modifiedDamage = (float) (modifiedDamage * result.getDamageMultiplier() / result.getDefenseMultiplier());
                             applyEffects(attacker, target, result.getEffect());
                             ElementEndow.LOGGER.info("Applied induced reaction: {}", result.getReactionKey());
                         }
 
                         event.setAmount(modifiedDamage);
+                    }
+                }
+            }
+
+            //处理内部反应的afflict效果
+            ReactionManager manager = ElementEndow.getReactionManager();
+            if (manager != null) {
+                List<String> activeElements = getActiveElements(attacker);
+                if (!activeElements.isEmpty()) {
+                    List<ReactionResult> internalResults = manager.processInternalReaction(attacker, activeElements);
+                    if (!internalResults.isEmpty()) {
+                        for (ReactionResult result : internalResults) {
+                            applyInternalAfflictEffects(target, result);
+                            ElementEndow.LOGGER.info("Applied internal afflict reaction: {}", result.getReactionKey());
+                        }
                     }
                 }
             }
@@ -59,10 +73,9 @@ public class ReactionEventHandler {
                 if (manager != null) {
                     List<ReactionResult> results = manager.processInternalReaction(player, activeElements);
                     if (!results.isEmpty()) {
-                        //应用所有匹配的internal反应
                         for (ReactionResult result : results) {
-                            applyInternalEffects(player, result);
-                            ElementEndow.LOGGER.info("Applied internal reaction: {} with multiplier: {}",
+                            applyInternalEmpowerEffects(player, result);
+                            ElementEndow.LOGGER.info("Applied internal empower reaction: {} with multiplier: {}",
                                     result.getReactionKey(), result.getMultiplier());
                         }
                     }
@@ -120,9 +133,21 @@ public class ReactionEventHandler {
         }
     }
 
-    private static void applyInternalEffects(Player player, ReactionResult result) {
+    private static void applyInternalEmpowerEffects(Player player, ReactionResult result) {
         for (MobEffectInstance effectInstance : result.getEffect().getEmpowerEffects()) {
             player.addEffect(new MobEffectInstance(
+                    effectInstance.getEffect(),
+                    effectInstance.getDuration(),
+                    effectInstance.getAmplifier(),
+                    effectInstance.isAmbient(),
+                    effectInstance.isVisible()
+            ));
+        }
+    }
+
+    private static void applyInternalAfflictEffects(LivingEntity target, ReactionResult result) {
+        for (MobEffectInstance effectInstance : result.getEffect().getAfflictEffects()) {
+            target.addEffect(new MobEffectInstance(
                     effectInstance.getEffect(),
                     effectInstance.getDuration(),
                     effectInstance.getAmplifier(),

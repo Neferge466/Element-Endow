@@ -1,12 +1,12 @@
 {
   "key": "elemental_synergy",
-  "type": "INTERNAL",
+  "type": "internal",
   "reactions": [
     {
       "match": ["element_endow:fire", "element_endow:lightning"],
       "rate": 0.15,
       "effect": {
-        "afflict": [],
+        "afflict": [["minecraft:slow_falling", 60, 0, true]],
         "empower": [
           ["minecraft:speed", 100, 1, true],
           ["minecraft:strength", 100, 0, true]
