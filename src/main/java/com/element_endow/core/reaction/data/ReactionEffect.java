@@ -1,4 +1,4 @@
-package com.element_endow.reaction.data;
+package com.element_endow.core.reaction.data;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

@@ -1,49 +1,39 @@
 package com.element_endow;
 
-import com.element_endow.config.ElementRegistry;
-import com.element_endow.reaction.ReactionManager;
-import com.mojang.logging.LogUtils;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
+import com.element_endow.core.ElementEndowCore;
+import com.element_endow.core.element.ElementRegistry;
+import com.element_endow.core.element.ElementSystemImpl;
+import com.element_endow.services.ServiceManager;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.slf4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Mod(ElementEndow.MODID)
 public class ElementEndow {
     public static final String MODID = "element_endow";
-    public static final Logger LOGGER = LogUtils.getLogger();
-
-    private static ElementEndow instance;
-    private ReactionManager reactionManager;
+    public static final Logger LOGGER = LogManager.getLogger();
 
     public ElementEndow() {
-        instance = this;
+        LOGGER.info("Initializing ElementEndow Lib Mod");
 
-        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        try {
+            //初始化核心系统
+            ElementEndowCore core = ElementEndowCore.getInstance();
+            core.initialize();
 
-        ElementRegistry.ATTRIBUTES.register(modBus);
+            //通过ElementSystemImpl获取注册表
+            ElementSystemImpl elementSystem = (ElementSystemImpl) core.getElementSystem();
+            ElementRegistry.ATTRIBUTES.register(FMLJavaModLoadingContext.get().getModEventBus());
 
-        MinecraftForge.EVENT_BUS.addListener(this::onAddReloadListeners);
+            //发现并注册服务
+            ServiceManager.discoverAndRegisterServices();
 
-        LOGGER.info("Element Endow mod initialized with {} elements",
-                ElementRegistry.getRegisteredElements().size());
-    }
+            LOGGER.info("ElementEndow Lib Mod initialized successfully");
 
-    private void onAddReloadListeners(AddReloadListenerEvent event) {
-
-        reactionManager = new ReactionManager();
-        event.addListener(reactionManager);
-
-        LOGGER.info("Registered element config and reaction system reload listeners");
-    }
-
-    public static ReactionManager getReactionManager() {
-        return instance != null ? instance.reactionManager : null;
-    }
-
-    public static ElementEndow getInstance() {
-        return instance;
+        } catch (Exception e) {
+            LOGGER.error("Failed to initialize ElementEndow Lib Mod", e);
+            throw new RuntimeException("ElementEndow initialization failed", e);
+        }
     }
 }

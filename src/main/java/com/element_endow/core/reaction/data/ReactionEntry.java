@@ -1,8 +1,10 @@
-package com.element_endow.reaction.data;
+package com.element_endow.core.reaction.data;
 
+import com.element_endow.api.reaction.ReactionType; // 使用 API 的 ReactionType
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,9 +13,9 @@ public class ReactionEntry {
     private final double rate;
     private final double[] rateArray;
     private final ReactionEffect effect;
-    private final ReactionType type;
+    private final ReactionType type; // 使用 API 的 ReactionType
 
-    public ReactionEntry(JsonObject json, ReactionType configType) {
+    public ReactionEntry(JsonObject json, ReactionType configType) { // 使用 API 的 ReactionType
         this.type = configType;
         this.matchElements = new ArrayList<>();
 
@@ -46,5 +48,5 @@ public class ReactionEntry {
     public double getRate() { return rate; }
     public double[] getRateArray() { return rateArray; }
     public ReactionEffect getEffect() { return effect; }
-    public ReactionType getType() { return type; }
+    public ReactionType getType() { return type; } // 返回 API 的 ReactionType
 }
