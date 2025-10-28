@@ -27,7 +27,7 @@ public class GlobalAttributeHandler {
             for (EntityType<? extends LivingEntity> entityType : event.getTypes()) {
                 if (DefaultAttributes.hasSupplier(entityType)) {
                     entityCount++;
-                    for (String elementId : elementSystem.getRegisteredElements()) {
+                    for (String elementId : elementSystem.getEnabledElements()) {
                         Optional<Attribute> attribute = elementSystem.getElementAttribute(elementId);
                         if (attribute.isPresent() && !event.has(entityType, attribute.get())) {
                             event.add(entityType, attribute.get());

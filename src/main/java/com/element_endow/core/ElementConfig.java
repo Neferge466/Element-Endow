@@ -1,6 +1,7 @@
 package com.element_endow.core;
 
 import com.element_endow.ElementEndow;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -24,7 +25,6 @@ public class ElementConfig {
 
     public void load() {
         elements.clear();
-
         try {
             if (!configFile.exists()) {
                 createDefaultConfig();

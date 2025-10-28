@@ -4,7 +4,7 @@ license = "GPL-3.0"
 issueTrackerURL="https://github.com/Neferge466/Element-Endow/issues"
 [[mods]]
 modId = "element_endow"
-version = "0.0.1"
+version = "0.0.8"
 displayName = "Element Endow"
 displayURL="https://github.com/Neferge466/Element-Endow"
 authors = "NEFOR"

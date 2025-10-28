@@ -43,7 +43,6 @@ public class ElementRegistry {
 
             registeredAttributes.put(elementId, attribute);
             attributeData.put(elementId, new AttributeData(displayName, defaultValue, minValue, maxValue));
-
             return true;
         } catch (Exception e) {
             LOGGER.error("Failed to register element: {}", elementId, e);
@@ -51,8 +50,8 @@ public class ElementRegistry {
         }
     }
 
-    public boolean unregisterElement(String elementId) {
-        return registeredAttributes.remove(elementId) != null && attributeData.remove(elementId) != null;
+    public boolean isElementRegistered(String elementId) {
+        return registeredAttributes.containsKey(elementId);
     }
 
     public Optional<Attribute> getElementAttribute(String elementId) {
