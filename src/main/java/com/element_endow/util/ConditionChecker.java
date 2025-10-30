@@ -8,6 +8,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Holder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -114,6 +117,7 @@ public class ConditionChecker {
 
         return true;
     }
+
 
     private static boolean checkWeatherCondition(Object weatherCondition, Level level) {
         if (weatherCondition instanceof String) {
@@ -284,6 +288,26 @@ public class ConditionChecker {
                     conditionTexts.add(Component.translatable("gui.element_endow.conditions.dimensions", dimensions));
                 }
             }
+
+
+//            if (conditions.containsKey("structure")) {
+//                Object structureCond = conditions.get("structure");
+//                if (structureCond instanceof String) {
+//                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.structure", structureCond));
+//                } else if (structureCond instanceof List) {
+//                    String structures = String.join(", ", (List<String>) structureCond);
+//                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.structures", structures));
+//                } else if (structureCond instanceof Map) {
+//                    Map<?, ?> structureMap = (Map<?, ?>) structureCond;
+//                    if (structureMap.containsKey("any_of")) {
+//                        List<String> structures = (List<String>) structureMap.get("any_of");
+//                        conditionTexts.add(Component.translatable("gui.element_endow.conditions.structure_any", String.join(", ", structures)));
+//                    } else if (structureMap.containsKey("all_of")) {
+//                        List<String> structures = (List<String>) structureMap.get("all_of");
+//                        conditionTexts.add(Component.translatable("gui.element_endow.conditions.structure_all", String.join(", ", structures)));
+//                    }
+//                }
+//            }
 
             if (conditions.containsKey("weather")) {
                 Object weatherCond = conditions.get("weather");

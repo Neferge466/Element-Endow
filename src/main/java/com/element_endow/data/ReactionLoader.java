@@ -34,8 +34,6 @@ public class ReactionLoader {
         int loadedCount = 0;
         int errorCount = 0;
 
-        LOGGER.info("Processing {} reaction resources", resources.size());
-
         for (Map.Entry<ResourceLocation, JsonElement> entry : resources.entrySet()) {
             ResourceLocation location = entry.getKey();
 
@@ -43,16 +41,14 @@ public class ReactionLoader {
                 continue;
             }
 
-            LOGGER.info("Loading reaction file: {}", location);
             try {
                 ElementReaction reaction = GSON.fromJson(entry.getValue(), ElementReaction.class);
 
                 if (validateReaction(reaction)) {
                     reactions.put(reaction.id, reaction);
                     loadedCount++;
-                    LOGGER.info("Successfully loaded reaction: {}", reaction.id);
+                    LOGGER.debug("Loaded reaction: {}", reaction.id);
                 } else {
-                    LOGGER.warn("Invalid reaction data: {}", location);
                     errorCount++;
                 }
             } catch (Exception e) {
@@ -61,81 +57,41 @@ public class ReactionLoader {
             }
         }
 
-        LOGGER.info("Loaded {} element reactions from resources ({} errors)", loadedCount, errorCount);
-        validateReactionEffects();
+        LOGGER.info("Loaded {} element reactions ({} errors)", loadedCount, errorCount);
     }
 
-    private MobEffectInstance createEffectInstance(ReactionEffect effect) {
-        try {
-            ResourceLocation effectId = new ResourceLocation(effect.effect);
-            MobEffect mobEffect = BuiltInRegistries.MOB_EFFECT.get(effectId);
-
-            if (mobEffect == null) {
-                LOGGER.error("Effect not found: {}. Please check if the effect ID is correct.", effect.effect);
-                return null;
-            }
-
-            return new MobEffectInstance(
-                    mobEffect,
-                    effect.duration,
-                    effect.amplifier,
-                    false,
-                    effect.showParticles,
-                    true
-            );
-
-        } catch (Exception e) {
-            LOGGER.error("Failed to create effect instance for: {}. Error: {}", effect.effect, e.getMessage());
-            return null;
-        }
-    }
-
-    private boolean validateEffect(String effectId) {
-        try {
-            ResourceLocation location = new ResourceLocation(effectId);
-            return BuiltInRegistries.MOB_EFFECT.containsKey(location);
-        } catch (Exception e) {
-            LOGGER.warn("Invalid effect ID format: {}", effectId);
+    private boolean validateReaction(ElementReaction reaction) {
+        if (reaction.id == null || reaction.id.isEmpty()) {
+            LOGGER.error("Reaction missing ID");
             return false;
         }
-    }
 
-    public void validateReactionEffects() {
-        LOGGER.info("Validating reaction effects...");
-
-        int validEffects = 0;
-        int invalidEffects = 0;
-
-        for (ElementReaction reaction : reactions.values()) {
-            if (reaction.attackEntry != null) {
-                validEffects += validateEffectList(reaction.attackEntry.targetEffects, reaction.id, "attack target");
-                validEffects += validateEffectList(reaction.attackEntry.selfEffects, reaction.id, "attack self");
-            }
-
-            if (reaction.defenseEntry != null) {
-                validEffects += validateEffectList(reaction.defenseEntry.targetEffects, reaction.id, "defense target");
-                validEffects += validateEffectList(reaction.defenseEntry.selfEffects, reaction.id, "defense self");
-            }
+        if (reaction.elementA == null || reaction.elementA.isEmpty()) {
+            LOGGER.error("Reaction {} missing elementA", reaction.id);
+            return false;
         }
 
-        LOGGER.info("Effect validation complete: {} valid effects found", validEffects);
-        if (invalidEffects > 0) {
-            LOGGER.warn("{} invalid effects were found and will be ignored", invalidEffects);
+        if (reaction.elementB == null || reaction.elementB.isEmpty()) {
+            LOGGER.error("Reaction {} missing elementB", reaction.id);
+            return false;
         }
-    }
 
-    private int validateEffectList(List<ReactionEffect> effects, String reactionId, String effectType) {
-        if (effects == null) return 0;
-
-        int validCount = 0;
-        for (ReactionEffect effect : effects) {
-            if (validateEffect(effect.effect)) {
-                validCount++;
-            } else {
-                LOGGER.warn("Invalid {} effect in reaction {}: {}", effectType, reactionId, effect.effect);
-            }
+        // 初始化空列表避免NPE
+        if (reaction.attackEntry != null) {
+            if (reaction.attackEntry.targetEffects == null) reaction.attackEntry.targetEffects = new ArrayList<>();
+            if (reaction.attackEntry.selfEffects == null) reaction.attackEntry.selfEffects = new ArrayList<>();
+            if (reaction.attackEntry.targetAttributeModifiers == null) reaction.attackEntry.targetAttributeModifiers = new ArrayList<>();
+            if (reaction.attackEntry.selfAttributeModifiers == null) reaction.attackEntry.selfAttributeModifiers = new ArrayList<>();
         }
-        return validCount;
+
+        if (reaction.defenseEntry != null) {
+            if (reaction.defenseEntry.targetEffects == null) reaction.defenseEntry.targetEffects = new ArrayList<>();
+            if (reaction.defenseEntry.selfEffects == null) reaction.defenseEntry.selfEffects = new ArrayList<>();
+            if (reaction.defenseEntry.targetAttributeModifiers == null) reaction.defenseEntry.targetAttributeModifiers = new ArrayList<>();
+            if (reaction.defenseEntry.selfAttributeModifiers == null) reaction.defenseEntry.selfAttributeModifiers = new ArrayList<>();
+        }
+
+        return true;
     }
 
     public void processAttackReactions(Collection<String> attackerElements, Collection<String> targetElements,
@@ -203,8 +159,6 @@ public class ReactionLoader {
     }
 
     private void applyAttackReaction(ElementReaction reaction, ReactionResult result, LivingEntity attacker, LivingEntity target) {
-        LOGGER.info("Applying attack reaction: {}", reaction.id);
-
         if (reaction.attackEntry != null) {
             applyReactionEntry(reaction.attackEntry, result, target, attacker);
             applyAttributeModifiers(reaction.attackEntry, result, target, attacker);
@@ -225,8 +179,6 @@ public class ReactionLoader {
     }
 
     private void applyDefenseReaction(ElementReaction reaction, ReactionResult result, LivingEntity attacker, LivingEntity defender) {
-        LOGGER.info("Applying defense reaction: {}", reaction.id);
-
         if (reaction.defenseEntry != null) {
             applyReactionEntry(reaction.defenseEntry, result, defender, attacker);
             applyAttributeModifiers(reaction.defenseEntry, result, defender, attacker);
@@ -247,87 +199,22 @@ public class ReactionLoader {
     }
 
     private void applyAttributeModifiers(ReactionEntry entry, ReactionResult result, LivingEntity target, LivingEntity source) {
-        LOGGER.info("Processing attribute modifiers - target: {}, self: {}", target, source);
-
         if (entry.targetAttributeModifiers != null && target != null) {
-            LOGGER.info("Found {} target attribute modifiers", entry.targetAttributeModifiers.size());
             for (AttributeModifierData modifierData : entry.targetAttributeModifiers) {
-                AttributeModifier modifier = createAttributeModifier(modifierData);
-                if (modifier != null) {
-                    int duration = modifierData.duration > 0 ? modifierData.duration : 100;
-                    result.targetAttributeModifiers.add(new ReactionResult.AttributeModifierApplication(
-                            modifierData.attribute, modifier, modifierData.permanent, duration
-                    ));
-                    LOGGER.info("Added target attribute modifier: {}, value: {}, duration: {} ticks",
-                            modifierData.attribute, modifierData.value, duration);
+                ReactionResult.AttributeModifierApplication app = modifierData.toAttributeModifierApplication();
+                if (app != null) {
+                    result.targetAttributeModifiers.add(app);
                 }
             }
         }
 
         if (entry.selfAttributeModifiers != null && source != null) {
-            LOGGER.info("Found {} self attribute modifiers", entry.selfAttributeModifiers.size());
             for (AttributeModifierData modifierData : entry.selfAttributeModifiers) {
-                AttributeModifier modifier = createAttributeModifier(modifierData);
-                if (modifier != null) {
-                    int duration = modifierData.duration > 0 ? modifierData.duration : 100;
-                    result.selfAttributeModifiers.add(new ReactionResult.AttributeModifierApplication(
-                            modifierData.attribute, modifier, modifierData.permanent, duration
-                    ));
-                    LOGGER.info("Added self attribute modifier: {}, value: {}, duration: {} ticks",
-                            modifierData.attribute, modifierData.value, duration);
+                ReactionResult.AttributeModifierApplication app = modifierData.toAttributeModifierApplication();
+                if (app != null) {
+                    result.selfAttributeModifiers.add(app);
                 }
             }
-        }
-    }
-
-    private AttributeModifier createAttributeModifier(AttributeModifierData modifierData) {
-        try {
-            AttributeModifier.Operation operation;
-
-            switch (modifierData.operation.toLowerCase()) {
-                case "add":
-                    operation = AttributeModifier.Operation.ADDITION;
-                    break;
-                case "multiply_base":
-                    operation = AttributeModifier.Operation.MULTIPLY_BASE;
-                    break;
-                case "multiply_total":
-                    operation = AttributeModifier.Operation.MULTIPLY_TOTAL;
-                    break;
-                default:
-                    LOGGER.error("Unknown attribute operation type: {}, using default ADDITION", modifierData.operation);
-                    operation = AttributeModifier.Operation.ADDITION;
-                    break;
-            }
-
-            UUID modifierId;
-            if (modifierData.uuid != null && !modifierData.uuid.trim().isEmpty()) {
-                try {
-                    modifierId = UUID.fromString(modifierData.uuid);
-                } catch (IllegalArgumentException e) {
-                    LOGGER.warn("Invalid UUID format: {}, generating random UUID", modifierData.uuid);
-                    modifierId = UUID.randomUUID();
-                }
-            } else {
-                modifierId = UUID.randomUUID();
-            }
-
-            String modifierName = modifierData.name != null ?
-                    modifierData.name : "element_endow.reaction." + modifierData.operation;
-
-            LOGGER.info("Creating attribute modifier: ID={}, name={}, value={}, operation={}",
-                    modifierId, modifierName, modifierData.value, operation);
-
-            return new AttributeModifier(
-                    modifierId,
-                    modifierName,
-                    modifierData.value,
-                    operation
-            );
-
-        } catch (Exception e) {
-            LOGGER.error("Failed to create attribute modifier: {}", modifierData.attribute, e);
-            return null;
         }
     }
 
@@ -342,7 +229,6 @@ public class ReactionLoader {
                 MobEffectInstance effectInstance = createEffectInstance(effect);
                 if (effectInstance != null) {
                     target.addEffect(effectInstance);
-                    LOGGER.debug("Applied effect {} to target {}", effect.effect, target);
                 }
             }
         }
@@ -352,45 +238,36 @@ public class ReactionLoader {
                 MobEffectInstance effectInstance = createEffectInstance(effect);
                 if (effectInstance != null) {
                     source.addEffect(effectInstance);
-                    LOGGER.debug("Applied effect {} to self {}", effect.effect, source);
                 }
             }
         }
     }
 
-    private boolean validateReaction(ElementReaction reaction) {
-        if (reaction.id == null || reaction.id.isEmpty()) {
-            LOGGER.error("Reaction missing ID");
-            return false;
-        }
+    private MobEffectInstance createEffectInstance(ReactionEffect effect) {
+        try {
+            ResourceLocation effectId = new ResourceLocation(effect.effect);
+            MobEffect mobEffect = BuiltInRegistries.MOB_EFFECT.get(effectId);
 
-        if (reaction.elementA == null || reaction.elementA.isEmpty()) {
-            LOGGER.error("Reaction {} missing elementA", reaction.id);
-            return false;
-        }
+            if (mobEffect == null) {
+                return null;
+            }
 
-        if (reaction.elementB == null || reaction.elementB.isEmpty()) {
-            LOGGER.error("Reaction {} missing elementB", reaction.id);
-            return false;
-        }
+            return new MobEffectInstance(
+                    mobEffect,
+                    effect.duration,
+                    effect.amplifier,
+                    false,
+                    effect.showParticles,
+                    true
+            );
 
-        if (reaction.attackEntry != null) {
-            if (reaction.attackEntry.targetEffects == null) reaction.attackEntry.targetEffects = new ArrayList<>();
-            if (reaction.attackEntry.selfEffects == null) reaction.attackEntry.selfEffects = new ArrayList<>();
-            if (reaction.attackEntry.targetAttributeModifiers == null) reaction.attackEntry.targetAttributeModifiers = new ArrayList<>();
-            if (reaction.attackEntry.selfAttributeModifiers == null) reaction.attackEntry.selfAttributeModifiers = new ArrayList<>();
+        } catch (Exception e) {
+            LOGGER.error("Failed to create effect instance: {}", effect.effect, e);
+            return null;
         }
-
-        if (reaction.defenseEntry != null) {
-            if (reaction.defenseEntry.targetEffects == null) reaction.defenseEntry.targetEffects = new ArrayList<>();
-            if (reaction.defenseEntry.selfEffects == null) reaction.defenseEntry.selfEffects = new ArrayList<>();
-            if (reaction.defenseEntry.targetAttributeModifiers == null) reaction.defenseEntry.targetAttributeModifiers = new ArrayList<>();
-            if (reaction.defenseEntry.selfAttributeModifiers == null) reaction.defenseEntry.selfAttributeModifiers = new ArrayList<>();
-        }
-
-        return true;
     }
 
+    // 数据类定义
     public static class ElementReaction {
         public String id;
         public String elementA;
@@ -442,6 +319,56 @@ public class ReactionLoader {
         public String uuid;
         public boolean permanent = false;
         public int duration = 100;
+
+        /**
+         * 转换为 AttributeModifierApplication 类型
+         */
+        public ReactionResult.AttributeModifierApplication toAttributeModifierApplication() {
+            AttributeModifier modifier = createAttributeModifier();
+            if (modifier == null) {
+                return null;
+            }
+            return new ReactionResult.AttributeModifierApplication(
+                    this.attribute,
+                    modifier,
+                    this.permanent,
+                    this.duration
+            );
+        }
+
+        private AttributeModifier createAttributeModifier() {
+            try {
+                AttributeModifier.Operation operation = getOperation();
+
+                UUID modifierId;
+                if (uuid != null && !uuid.trim().isEmpty()) {
+                    try {
+                        modifierId = UUID.fromString(uuid);
+                    } catch (IllegalArgumentException e) {
+                        modifierId = UUID.randomUUID();
+                    }
+                } else {
+                    modifierId = UUID.randomUUID();
+                }
+
+                String modifierName = name != null ? name : "element_endow.reaction." + operation;
+
+                return new AttributeModifier(modifierId, modifierName, value, operation);
+
+            } catch (Exception e) {
+                LOGGER.error("Failed to create attribute modifier: {}", attribute, e);
+                return null;
+            }
+        }
+
+        private AttributeModifier.Operation getOperation() {
+            switch (operation.toLowerCase()) {
+                case "add": return AttributeModifier.Operation.ADDITION;
+                case "multiply_base": return AttributeModifier.Operation.MULTIPLY_BASE;
+                case "multiply_total": return AttributeModifier.Operation.MULTIPLY_TOTAL;
+                default: return AttributeModifier.Operation.ADDITION;
+            }
+        }
     }
 
     public Map<String, ElementReaction> getReactions() {
@@ -450,13 +377,5 @@ public class ReactionLoader {
 
     public int getReactionCount() {
         return reactions.size();
-    }
-
-    public boolean hasReaction(String reactionId) {
-        return reactions.containsKey(reactionId);
-    }
-
-    public ElementReaction getReaction(String reactionId) {
-        return reactions.get(reactionId);
     }
 }

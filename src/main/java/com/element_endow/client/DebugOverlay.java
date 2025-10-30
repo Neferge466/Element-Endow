@@ -7,6 +7,7 @@ import com.element_endow.data.ReactionLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
@@ -212,13 +213,38 @@ public class DebugOverlay {
                         currentY += 6;
                     }
 
-                    //显示效果
-                    for (CombinationLoader.CombinationEffect effect : combo.effects) {
+                    //显示属性效果
+                    if (combo.attributeEffects != null && !combo.attributeEffects.isEmpty()) {
                         drawScaledString(guiGraphics,
-                                Component.translatable("gui.element_endow.debug.effect", effect.attribute, effect.operation, String.format("%.2f", effect.value)),
-                                panelX + 25, currentY, 0xAAAAAA);
+                                Component.translatable("gui.element_endow.debug.attribute_effects"),
+                                panelX + 25, currentY, 0x55FFFF);
                         currentY += 6;
+
+                        for (CombinationLoader.AttributeEffect effect : combo.attributeEffects) {
+                            String effectText = String.format("%s %s %.2f", effect.attribute, effect.operation, effect.value);
+                            drawScaledString(guiGraphics,
+                                    Component.literal("  - " + effectText),
+                                    panelX + 30, currentY, 0xAAAAAA);
+                            currentY += 6;
+                        }
                     }
+
+                    //显示状态效果
+                    if (combo.statusEffects != null && !combo.statusEffects.isEmpty()) {
+                        drawScaledString(guiGraphics,
+                                Component.translatable("gui.element_endow.debug.status_effects"),
+                                panelX + 25, currentY, 0xFF55FF);
+                        currentY += 6;
+
+                        for (CombinationLoader.StatusEffect effect : combo.statusEffects) {
+                            String effectText = String.format("%s (Lv%d, %ds)", effect.effect, effect.amplifier + 1, effect.duration / 20);
+                            drawScaledString(guiGraphics,
+                                    Component.literal("  - " + effectText),
+                                    panelX + 30, currentY, 0xAAAAAA);
+                            currentY += 6;
+                        }
+                    }
+
                     currentY += 2;
                 }
 
@@ -536,7 +562,7 @@ public class DebugOverlay {
         int screenWidth = minecraft.getWindow().getGuiScaledWidth();
         int screenHeight = minecraft.getWindow().getGuiScaledHeight();
 
-        //应用缩放
+        // 应用缩放
         guiGraphics.pose().pushPose();
         guiGraphics.pose().scale(scale, scale, scale);
 
@@ -544,16 +570,16 @@ public class DebugOverlay {
         int scaledWidth = (int)(screenWidth * inverseScale);
         int scaledHeight = (int)(screenHeight * inverseScale);
 
-        //计算面板尺寸
+        // 计算面板尺寸
         int panelWidth = 350;
-        int panelHeight = Math.min(400, scaledHeight - 40);
+        int panelHeight = Math.min(450, scaledHeight - 40); // 增加高度以容纳新信息
         int panelX = (scaledWidth - panelWidth) / 2;
         int panelY = 20;
 
-        //绘制背景
+        // 绘制背景
         guiGraphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0x80000000);
 
-        //显示实体名称
+        // 显示实体名称
         String entityName = entity.getDisplayName().getString();
         String entityType = ForgeRegistries.ENTITY_TYPES.getKey(entity.getType()).toString();
         drawScaledString(guiGraphics, Component.translatable("gui.element_endow.inspect.title", entityName, entityType),
@@ -563,9 +589,33 @@ public class DebugOverlay {
 
         int contentStartY = panelY + 30;
         int currentY = contentStartY - (int)scrollOffset;
-        int maxContentHeight = panelHeight - 50;
+        int maxContentHeight = panelHeight - 70; // 调整最大高度
 
-        //显示实体元素
+        //显示实体维度信息
+        drawSectionTitle(guiGraphics, Component.translatable("gui.element_endow.inspect.dimension"),
+                panelX + 10,
+                currentY);
+        currentY += 15;
+
+        String dimensionName = getDimensionName(entity.level());
+        drawScaledString(guiGraphics,
+                Component.translatable("gui.element_endow.inspect.dimension_value", dimensionName),
+                panelX + 20,
+                currentY,
+                0xAAAAAA);
+        currentY += 10;
+
+        //显示实体位置
+        drawScaledString(guiGraphics,
+                Component.translatable("gui.element_endow.inspect.position",
+                        entity.getBlockX(), entity.getBlockY(), entity.getBlockZ()),
+                panelX + 20,
+                currentY,
+                0xAAAAAA);
+        currentY += 10;
+        currentY += 5;
+
+        //原有的实体元素显示
         drawSectionTitle(guiGraphics, Component.translatable("gui.element_endow.debug.entity_elements"),
                 panelX + 10,
                 currentY);
@@ -597,7 +647,7 @@ public class DebugOverlay {
         }
         currentY += 5;
 
-        //显示实体激活的组合
+        //原有的实体激活的组合
         drawSectionTitle(guiGraphics, Component.translatable("gui.element_endow.debug.active_combinations"),
                 panelX + 10,
                 currentY);
@@ -623,7 +673,7 @@ public class DebugOverlay {
         }
         currentY += 5;
 
-        //显示实体效果
+        //原有的实体效果
         drawSectionTitle(guiGraphics, Component.translatable("gui.element_endow.debug.active_effects"),
                 panelX + 10, currentY);
         currentY += 15;
@@ -651,12 +701,9 @@ public class DebugOverlay {
                 if (currentY > contentStartY + maxContentHeight) break;
             }
         }
+        currentY += 5;
 
-
-
-
-
-        //显示实体生命值
+        //原有的实体生命值
         drawSectionTitle(guiGraphics, Component.translatable("gui.element_endow.inspect.health"),
                 panelX + 10,
                 currentY);
@@ -671,8 +718,6 @@ public class DebugOverlay {
                 panelX + 20,
                 currentY, getHealthColor(health / maxHealth));
         currentY += 10;
-
-
 
         //显示返回提示
         int helpY = panelY + panelHeight - 20;
@@ -717,32 +762,185 @@ public class DebugOverlay {
             return Component.translatable("gui.element_endow.conditions.none");
         }
 
-        List<String> conditionParts = new ArrayList<>();
+        // 使用 Component 列表来构建条件描述
+        List<Component> conditionTexts = new ArrayList<>();
 
-        if (conditions.containsKey("biome")) {
-            conditionParts.add("biome:" + conditions.get("biome"));
-        }
-        if (conditions.containsKey("dimension")) {
-            conditionParts.add("dimension:" + conditions.get("dimension"));
-        }
-        if (conditions.containsKey("weather")) {
-            conditionParts.add("weather:" + conditions.get("weather"));
-        }
-        if (conditions.containsKey("time")) {
-            conditionParts.add("time:" + conditions.get("time"));
-        }
-        if (conditions.containsKey("moon_phase")) {
-            conditionParts.add("moon:" + conditions.get("moon_phase"));
-        }
-        if (conditions.containsKey("health")) {
-            conditionParts.add("health:" + conditions.get("health"));
-        }
-        if (conditions.containsKey("difficulty")) {
-            conditionParts.add("difficulty:" + conditions.get("difficulty"));
+        try {
+            if (conditions.containsKey("biome")) {
+                Object biomeCond = conditions.get("biome");
+                if (biomeCond instanceof String) {
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.biome", biomeCond));
+                } else if (biomeCond instanceof List) {
+                    String biomes = String.join(", ", (List<String>) biomeCond);
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.biomes", biomes));
+                }
+            }
+
+            if (conditions.containsKey("dimension")) {
+                Object dimCond = conditions.get("dimension");
+                if (dimCond instanceof String) {
+                    String dimensionName = getDimensionDisplayName((String) dimCond);
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.dimension", dimensionName));
+                } else if (dimCond instanceof List) {
+                    List<String> dimensions = (List<String>) dimCond;
+                    List<String> dimensionNames = new ArrayList<>();
+                    for (String dim : dimensions) {
+                        dimensionNames.add(getDimensionDisplayName(dim));
+                    }
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.dimensions", String.join(", ", dimensionNames)));
+                }
+            }
+
+            if (conditions.containsKey("weather")) {
+                Object weatherCond = conditions.get("weather");
+                if (weatherCond instanceof String) {
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.weather", weatherCond));
+                } else if (weatherCond instanceof Map) {
+                    Map<?, ?> weatherMap = (Map<?, ?>) weatherCond;
+                    List<String> weatherParts = new ArrayList<>();
+                    if (weatherMap.containsKey("raining")) {
+                        weatherParts.add((Boolean) weatherMap.get("raining") ? "raining" : "clear");
+                    }
+                    if (weatherMap.containsKey("thundering")) {
+                        weatherParts.add((Boolean) weatherMap.get("thundering") ? "thundering" : "not_thundering");
+                    }
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.weather", String.join(", ", weatherParts)));
+                }
+            }
+
+            if (conditions.containsKey("time")) {
+                Object timeCond = conditions.get("time");
+                if (timeCond instanceof String) {
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.time", timeCond));
+                } else if (timeCond instanceof Map) {
+                    Map<?, ?> timeMap = (Map<?, ?>) timeCond;
+                    List<String> timeParts = new ArrayList<>();
+                    if (timeMap.containsKey("min")) {
+                        timeParts.add("min: " + timeMap.get("min"));
+                    }
+                    if (timeMap.containsKey("max")) {
+                        timeParts.add("max: " + timeMap.get("max"));
+                    }
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.time_range", String.join(", ", timeParts)));
+                }
+            }
+
+            if (conditions.containsKey("moon_phase")) {
+                Object moonCond = conditions.get("moon_phase");
+                if (moonCond instanceof Number) {
+                    int phase = ((Number) moonCond).intValue();
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.moon_phase", getMoonPhaseName(phase)));
+                } else if (moonCond instanceof Map) {
+                    Map<?, ?> moonMap = (Map<?, ?>) moonCond;
+                    List<String> moonParts = new ArrayList<>();
+                    if (moonMap.containsKey("full_moon") && (Boolean) moonMap.get("full_moon")) {
+                        moonParts.add("full_moon");
+                    }
+                    if (moonMap.containsKey("new_moon") && (Boolean) moonMap.get("new_moon")) {
+                        moonParts.add("new_moon");
+                    }
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.moon_phases", String.join(", ", moonParts)));
+                }
+            }
+
+            if (conditions.containsKey("health")) {
+                Object healthCond = conditions.get("health");
+                if (healthCond instanceof Map) {
+                    Map<?, ?> healthMap = (Map<?, ?>) healthCond;
+                    List<String> healthParts = new ArrayList<>();
+                    if (healthMap.containsKey("min")) {
+                        healthParts.add("min: " + healthMap.get("min"));
+                    }
+                    if (healthMap.containsKey("max")) {
+                        healthParts.add("max: " + healthMap.get("max"));
+                    }
+                    if (healthMap.containsKey("percentage")) {
+                        healthParts.add("percentage: " + healthMap.get("percentage"));
+                    }
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.health", String.join(", ", healthParts)));
+                }
+            }
+
+            if (conditions.containsKey("difficulty")) {
+                Object diffCond = conditions.get("difficulty");
+                if (diffCond instanceof String) {
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.difficulty", diffCond));
+                }
+            }
+
+            if (conditions.containsKey("elements")) {
+                List<?> elementConds = (List<?>) conditions.get("elements");
+                if (!elementConds.isEmpty()) {
+                    conditionTexts.add(Component.translatable("gui.element_endow.conditions.elements", elementConds.size()));
+                    for (Object condObj : elementConds) {
+                        if (condObj instanceof Map) {
+                            Map<?, ?> elementCond = (Map<?, ?>) condObj;
+                            String elementId = (String) elementCond.get("element");
+                            if (elementId != null) {
+                                List<String> elementParts = new ArrayList<>();
+                                elementParts.add(elementId);
+                                if (elementCond.containsKey("min_value")) {
+                                    elementParts.add("min: " + elementCond.get("min_value"));
+                                }
+                                if (elementCond.containsKey("max_value")) {
+                                    elementParts.add("max: " + elementCond.get("max_value"));
+                                }
+                                conditionTexts.add(Component.literal("    - " + String.join(", ", elementParts)));
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            conditionTexts.add(Component.translatable("gui.element_endow.conditions.error"));
         }
 
-        return Component.literal(String.join(", ", conditionParts));
+        if (conditionTexts.isEmpty()) {
+            return Component.translatable("gui.element_endow.conditions.none");
+        }
+
+        // 将条件列表组合成一个 Component
+        MutableComponent result = Component.empty();
+        for (int i = 0; i < conditionTexts.size(); i++) {
+            if (i > 0) {
+                result.append(Component.literal(" | "));
+            }
+            result.append(conditionTexts.get(i));
+        }
+
+        return result;
     }
+
+
+
+    private static String getDimensionDisplayName(String dimensionId) {
+        String dimensionKey = "dimension." + dimensionId.replace(':', '.');
+        Component translated = Component.translatable(dimensionKey);
+        if (!translated.getString().equals(dimensionKey)) {
+            return translated.getString();
+        }
+        return dimensionId;
+    }
+
+    private String getDimensionName(net.minecraft.world.level.Level level) {
+        if (level == null) return "Unknown";
+
+        net.minecraft.resources.ResourceLocation dimensionId = level.dimension().location();
+        String dimensionKey = "dimension." + dimensionId.getNamespace() + "." + dimensionId.getPath();
+
+        // 尝试获取本地化的维度名称
+        Component translated = Component.translatable(dimensionKey);
+        if (!translated.getString().equals(dimensionKey)) {
+            return translated.getString();
+        }
+
+        // 如果没有本地化，返回原始ID（美化显示）
+        return dimensionId.getPath().substring(0, 1).toUpperCase() +
+                dimensionId.getPath().substring(1).replace('_', ' ');
+    }
+
+
 
     //ReactionConditions
     private Component getReactionConditionDescription(ReactionLoader.ReactionConditions conditions) {
@@ -773,6 +971,22 @@ public class DebugOverlay {
 
         return Component.literal(String.join("; ", conditionParts));
     }
+
+
+    private String getMoonPhaseName(int phase) {
+        switch (phase) {
+            case 0: return "Full Moon";
+            case 1: return "Waning Gibbous";
+            case 2: return "Last Quarter";
+            case 3: return "Waning Crescent";
+            case 4: return "New Moon";
+            case 5: return "Waxing Crescent";
+            case 6: return "First Quarter";
+            case 7: return "Waxing Gibbous";
+            default: return "Unknown";
+        }
+    }
+
 
     private String getSimpleConditionDescription(Map<String, Object> conditions) {
         if (conditions == null || conditions.isEmpty()) {

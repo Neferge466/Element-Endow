@@ -1,0 +1,13 @@
+{
+  "entityType": "minecraft:creeper",
+  "elements": {
+    "element_endow:lightning": 60.0,
+    "element_endow:chaos": 30.0
+  },
+  "persistent": false,
+  "priority": 20,
+  "displayName": "entity.element_endow.creeper_charged",
+  "conditions": {
+    "weather": "thunder"
+  }
+}

@@ -1,6 +1,7 @@
 package com.element_endow.core;
 
 import com.element_endow.api.*;
+import com.google.gson.JsonElement;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -24,9 +25,8 @@ public class ElementSystemImpl implements IElementSystem {
     private final ElementCombinationSystem combinationSystem;
     private final ElementMountSystem mountSystem;
 
-    //时效性修饰符管理
+    // 时效性修饰符管理
     private final Map<LivingEntity, Map<UUID, TimedModifierInfo>> timedModifiers = new WeakHashMap<>();
-
 
     public ElementSystemImpl() {
         this.registry = new ElementRegistry();
@@ -116,8 +116,14 @@ public class ElementSystemImpl implements IElementSystem {
             if (instance != null) {
                 ElementRegistry.AttributeData data = registry.getAttributeData(elementId);
                 if (data != null) {
+                    double oldValue = instance.getBaseValue();
                     double clampedValue = Math.max(data.minValue, Math.min(data.maxValue, value));
                     instance.setBaseValue(clampedValue);
+
+                    // 如果值发生变化，使组合缓存失效
+                    if (Math.abs(oldValue - clampedValue) > 0.001) {
+                        combinationSystem.invalidateEntityCache(entity);
+                    }
                 }
             }
         }
@@ -145,13 +151,13 @@ public class ElementSystemImpl implements IElementSystem {
         }
 
         try {
-            //从全局注册表获取
+            // 从全局注册表获取
             Attribute attribute = ForgeRegistries.ATTRIBUTES.getValue(attributeId);
             if (attribute != null) {
                 return Optional.of(attribute);
             }
 
-            //从自定义注册表获取
+            // 从自定义注册表获取
             return getElementAttribute(attributeId.toString());
 
         } catch (Exception e) {
@@ -159,7 +165,6 @@ public class ElementSystemImpl implements IElementSystem {
             return Optional.empty();
         }
     }
-
 
     @Override
     public double getAttributeValue(LivingEntity entity, ResourceLocation attributeId) {
@@ -192,7 +197,7 @@ public class ElementSystemImpl implements IElementSystem {
     public boolean applyAttributeModifier(LivingEntity entity,
                                           ResourceLocation attributeId,
                                           AttributeModifier modifier) {
-        //调用时效性方法，但设置持续时间为0
+        // 调用时效性方法，但设置持续时间为0
         return applyTimedAttributeModifier(entity, attributeId, modifier, 0);
     }
 
@@ -209,8 +214,7 @@ public class ElementSystemImpl implements IElementSystem {
         return false;
     }
 
-
-    //时效性属性修饰符方法
+    // 时效性属性修饰符方法
     @Override
     public boolean applyTimedAttributeModifier(LivingEntity entity, ResourceLocation attributeId,
                                                AttributeModifier modifier, int durationTicks) {
@@ -227,18 +231,18 @@ public class ElementSystemImpl implements IElementSystem {
                 return false;
             }
 
-            //记录应用前的值
+            // 记录应用前的值
             double beforeValue = instance.getValue();
 
-            //移除可能存在的相同UUID的旧修饰符
+            // 移除可能存在的相同UUID的旧修饰符
             if (instance.getModifier(modifier.getId()) != null) {
                 instance.removeModifier(modifier.getId());
             }
 
-            //应用新修饰符
+            // 应用新修饰符
             instance.addTransientModifier(modifier);
 
-            //记录时效
+            // 记录时效
             long currentTime = entity.level().getGameTime();
             TimedModifierInfo modifierInfo = new TimedModifierInfo(
                     attributeId,
@@ -251,21 +255,21 @@ public class ElementSystemImpl implements IElementSystem {
             Map<UUID, TimedModifierInfo> entityModifiers = timedModifiers.computeIfAbsent(entity, k -> new HashMap<>());
             entityModifiers.put(modifier.getId(), modifierInfo);
 
-            //验证修饰符应用
+            // 验证修饰符应用
             boolean success = instance.getModifier(modifier.getId()) != null;
             double afterValue = instance.getValue();
 
             if (success) {
-                LOGGER.info("The timeliness attribute modifier was applied successfully: entity={}, attribute={}, value changed: {} -> {}, duration={}tick",
+                LOGGER.debug("Timed attribute modifier applied: entity={}, attribute={}, value: {} -> {}, duration={} ticks",
                         entity, attributeId, beforeValue, afterValue, durationTicks);
             } else {
-                LOGGER.error("The timeliness attribute modifier application failed: entity={}, attribute={}", entity, attributeId);
+                LOGGER.error("Timed attribute modifier application failed: entity={}, attribute={}", entity, attributeId);
             }
 
             return success;
 
         } catch (Exception e) {
-            LOGGER.error("Error applying time-sensitivity attribute modifier: {}", attributeId, e);
+            LOGGER.error("Error applying timed attribute modifier: {}", attributeId, e);
             return false;
         }
     }
@@ -288,16 +292,16 @@ public class ElementSystemImpl implements IElementSystem {
             TimedModifierInfo info = entry.getValue();
 
             if (info.isExpired(currentTime)) {
-                //移除过期的修饰符
+                // 移除过期的修饰符
                 removeAttributeModifier(entity, info.attributeId, info.modifierId);
                 toRemove.add(entry.getKey());
 
-                LOGGER.debug("Remove deprecated attribute modifiers： entity={}, attribute={}, value={}",
+                LOGGER.debug("Removed expired attribute modifier: entity={}, attribute={}, value={}",
                         entity, info.attributeId, info.value);
             }
         }
 
-        //清理记录
+        // 清理记录
         for (UUID modifierId : toRemove) {
             entityModifiers.remove(modifierId);
         }
@@ -340,8 +344,18 @@ public class ElementSystemImpl implements IElementSystem {
 
     @Override
     public void reloadData() {
+        // 重新加载反应数据
         reactionSystem.reloadReactions();
+
+        // 重新加载组合数据
         combinationSystem.reloadCombinations();
+
+        LOGGER.info("Element system data reloaded");
+    }
+
+    // 添加数据包加载支持
+    public void loadCombinationsFromResources(Map<ResourceLocation, JsonElement> resources) {
+        combinationSystem.loadFromResources(resources);
     }
 
     private String formatDisplayName(String elementId) {

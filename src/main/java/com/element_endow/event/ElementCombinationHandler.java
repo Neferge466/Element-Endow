@@ -16,12 +16,22 @@ public class ElementCombinationHandler {
     public static void onLivingUpdate(LivingEvent.LivingTickEvent event) {
         LivingEntity entity = event.getEntity();
 
+        //检查组合的频率，每40tick检查一次（2秒）
         if (entity.tickCount % 40 == 0) {
             try {
                 var combinationSystem = ElementSystemAPI.getElementSystem().getCombinationSystem();
                 combinationSystem.checkAndApplyCombinations(entity);
             } catch (Exception e) {
                 LOGGER.error("Error checking entity combinations", e);
+            }
+        }
+
+        //检查条件绑定的频率，每100tick检查一次（5秒）
+        if (entity.tickCount % 100 == 0) {
+            try {
+                EntitySpawnHandler.checkConditionalBindings();
+            } catch (Exception e) {
+                LOGGER.error("Error checking conditional bindings", e);
             }
         }
 

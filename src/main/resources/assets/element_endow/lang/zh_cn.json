@@ -18,6 +18,8 @@
   "gui.element_endow.debug.forbids_elements": "  禁止: %s",
   "gui.element_endow.debug.effect": "  效果: %s %s %s",
   "gui.element_endow.debug.effect_entry": "  %s (%s级, %s)",
+  "gui.element_endow.debug.attribute_effects": "属性效果",
+  "gui.element_endow.debug.status_effects": "状态效果",
 
   "gui.element_endow.debug.help_main": "R:属性 | Alt+I:检查 | Alt+T:反应 | 滚轮:导航 | Alt+E:关闭",
   "gui.element_endow.debug.help_attributes": "R:返回 | 滚轮:导航 | Alt+E:关闭",

@@ -1,15 +1,17 @@
 package com.element_endow;
 
 import com.element_endow.api.ElementSystemAPI;
+import com.element_endow.command.ElementDebugCommand;
 import com.element_endow.core.ElementSystemImpl;
 import com.element_endow.core.ElementRegistry;
 import com.element_endow.event.ElementAttackEventHandler;
 import com.element_endow.event.ElementCombinationHandler;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,4 +42,14 @@ public class ElementEndow {
             throw new RuntimeException("ElementEndow initialization failed", e);
         }
     }
+
+    @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+    public static class CommandRegister {
+        @SubscribeEvent
+        public static void onRegisterCommands(RegisterCommandsEvent event) {
+            event.getDispatcher().register(ElementDebugCommand.register());
+            LOGGER.info("Element debug commands registered");
+        }
+    }
+
 }

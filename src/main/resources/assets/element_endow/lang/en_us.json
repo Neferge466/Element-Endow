@@ -18,6 +18,8 @@
   "gui.element_endow.debug.forbids_elements": "  Forbids: %s",
   "gui.element_endow.debug.effect": "  Effect: %s %s %s",
   "gui.element_endow.debug.effect_entry": "  %s (Lv.%s, %s)",
+  "gui.element_endow.debug.attribute_effects": "Attribute Effects",
+  "gui.element_endow.debug.status_effects": "Status Effects",
 
   "gui.element_endow.debug.help_main": "R:Attributes | Alt+I:Inspect | Alt+T:Reactions | Scroll:Navigate | Alt+E:Close",
   "gui.element_endow.debug.help_attributes": "R:Back | Scroll:Navigate | Alt+E:Close",
