@@ -34,7 +34,6 @@ public class ElementEndow {
             IEventBus eventBus = MinecraftForge.EVENT_BUS;
             eventBus.register(new ElementAttackEventHandler());
             eventBus.register(new ElementCombinationHandler());
-
             LOGGER.info("Element Endow system initialization complete");
 
         } catch (Exception e) {
@@ -51,5 +50,4 @@ public class ElementEndow {
             LOGGER.info("Element debug commands registered");
         }
     }
-
 }

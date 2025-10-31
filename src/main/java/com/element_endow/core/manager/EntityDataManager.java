@@ -61,7 +61,7 @@ public class EntityDataManager {
 
         synchronized (cleanupLock) {
             lastCleanupTime = currentTime;
-            long cleanupThreshold = currentTime - 300000; // 5分钟未访问
+            long cleanupThreshold = currentTime - 300000;//5分钟未访问
 
             Iterator<Map.Entry<LivingEntity, EntityData>> iterator = entityDataMap.entrySet().iterator();
             int removedCount = 0;
@@ -71,7 +71,9 @@ public class EntityDataManager {
                 LivingEntity entity = entry.getKey();
                 EntityData data = entry.getValue();
 
-                // 清理无效实体或长时间未访问的实体
+
+
+                //清理无效实体或长时间未访问的实体
                 if (entity == null || !entity.isAlive() || data.lastAccessTime < cleanupThreshold) {
                     iterator.remove();
                     removedCount++;

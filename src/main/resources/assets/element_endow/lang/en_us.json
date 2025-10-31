@@ -71,5 +71,26 @@
 
   "gui.element_endow.conditions.attacker": "Attacker: %s",
   "gui.element_endow.conditions.target": "Target: %s",
-  "gui.element_endow.conditions.world": "World: %s"
+  "gui.element_endow.conditions.world": "World: %s",
+
+
+  "jade.element_endow.elements": "Elements",
+  "jade.element_endow.combinations": "Active Combinations",
+  "jade.element_endow.mounts": "Mount Effects",
+
+  "config.jade.plugin_element_endow.element_info": "Element Info",
+  "config.jade.plugin_element_endow.combination_info": "Combination Info",
+  "config.jade.plugin_element_endow.mount_info": "Mount Info",
+
+  "config.jade_integration": "Jade Integration",
+  "config.jade_integration.showElementValues": "Show Element Values",
+  "config.jade_integration.showCombinations": "Show Combinations",
+  "config.jade_integration.showMounts": "Show Mount Effects"
+
+
+
+
+
+
+
 }

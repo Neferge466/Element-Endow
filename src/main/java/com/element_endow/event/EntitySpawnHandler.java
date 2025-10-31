@@ -6,9 +6,7 @@ import com.element_endow.data.entity_bindings.EntityElementBindingLoader;
 import com.element_endow.util.ConditionChecker;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
-import net.minecraftforge.event.entity.living.MobSpawnEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
@@ -38,22 +36,12 @@ public class EntitySpawnHandler {
 
         LivingEntity livingEntity = (LivingEntity) entity;
 
-        //检查是否为自然生成（避免从刷怪笼或其他情况重复生成时重复应用）
+        //检查是否为自然生成
         if (!isNaturalSpawn(livingEntity)) {
             return;
         }
 
         applyEntityElementBindings(livingEntity);
-    }
-
-    @SubscribeEvent
-    public static void onFinalizeSpawn(MobSpawnEvent.FinalizeSpawn event) {
-        LivingEntity entity = event.getEntity();
-
-        //对于自然生成的生物，立即应用元素绑定
-        if (isNaturalSpawn(entity)) {
-            applyEntityElementBindings(entity);
-        }
     }
 
     /**
@@ -82,9 +70,8 @@ public class EntitySpawnHandler {
             if (binding.hasConditions()) {
                 boolean conditionsMet = ConditionChecker.checkConditions(binding.conditions, entity, entity.level());
                 if (!conditionsMet) {
-                    //条件不再满足，移除元素绑定
+                    //条件不再满足，则移除元素绑定
                     removeElementBinding(entity, binding);
-                    LOGGER.debug("Removed conditional element binding from entity {}: conditions no longer met", entity);
                     return true;
                 }
             }
@@ -115,40 +102,28 @@ public class EntitySpawnHandler {
                     if (shouldApply) {
                         //记录条件绑定，用于后续检查
                         conditionalBindings.put(entity, binding);
-                        LOGGER.debug("Applied conditional element binding to entity: {} (Type: {})",
-                                entity.getName().getString(), entity.getType());
                     } else {
-                        LOGGER.debug("Conditions not met for entity binding: {} (Type: {})",
-                                entity.getName().getString(), entity.getType());
                         return;
                     }
                 }
 
                 if (shouldApply) {
-                    LOGGER.info("Applying element bindings for entity: {} (Type: {})",
-                            entity.getName().getString(), entity.getType());
-
-                    //应用元素绑定
+                  //用绑定已注册的元素
+                    int appliedCount = 0;
                     for (Map.Entry<String, Double> elementEntry : binding.elements.entrySet()) {
                         String elementId = elementEntry.getKey();
                         double value = elementEntry.getValue();
-
-                        //确保元素已注册
+                        //格式检查
                         if (elementSystem.isElementRegistered(elementId)) {
                             elementSystem.setElementValue(entity, elementId, value);
-                            LOGGER.debug("Applied element {} with value {} to entity {}",
-                                    elementId, value, entity.getName().getString());
+                            appliedCount++;
                         } else {
-                            LOGGER.warn("Element {} is not registered, skipping for entity {}",
-                                    elementId, entity.getName().getString());
+                            LOGGER.warn("Element {} is not registered, skipping for entity {}", elementId, entity.getName().getString());
                         }
                     }
 
                     //标记为已处理
                     entity.getPersistentData().putLong("ElementEndowLastApplied", System.currentTimeMillis());
-
-                    LOGGER.info("Successfully applied {} element bindings to entity {}",
-                            binding.elements.size(), entity.getName().getString());
                 }
             }
 
@@ -166,9 +141,8 @@ public class EntitySpawnHandler {
 
             for (String elementId : binding.elements.keySet()) {
                 if (elementSystem.isElementRegistered(elementId)) {
-                    //将元素值重置为0
+                    // 将元素值重置为0
                     elementSystem.setElementValue(entity, elementId, 0.0);
-                    LOGGER.debug("Removed element {} from entity {}", elementId, entity);
                 }
             }
         } catch (Exception e) {

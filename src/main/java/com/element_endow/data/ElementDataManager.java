@@ -29,16 +29,9 @@ public class ElementDataManager {
 
     @SubscribeEvent
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
-        LOGGER.info("Registering element system data loaders");
-
         event.addListener(new ReactionDataLoader());
-        LOGGER.info("Reaction data loader registered");
-
         event.addListener(new CombinationDataLoader());
-        LOGGER.info("Combination data loader registered");
-
         event.addListener(new EntityBindingDataLoader());
-        LOGGER.info("Entity binding data loader registered");
 
         LOGGER.info("Element system data loaders registration completed");
     }

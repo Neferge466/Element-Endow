@@ -71,5 +71,22 @@
 
   "gui.element_endow.conditions.attacker": "攻击者: %s",
   "gui.element_endow.conditions.target": "目标: %s",
-  "gui.element_endow.conditions.world": "世界: %s"
+  "gui.element_endow.conditions.world": "世界: %s",
+
+
+  "jade.element_endow.elements": "元素",
+  "jade.element_endow.combinations": "激活组合",
+  "jade.element_endow.mounts": "挂载效果",
+
+  "config.jade.plugin_element_endow.element_info": "元素信息",
+  "config.jade.plugin_element_endow.combination_info": "组合信息",
+  "config.jade.plugin_element_endow.mount_info": "挂载信息",
+
+  "config.jade_integration": "Jade 集成",
+  "config.jade_integration.showElementValues": "显示元素数值",
+  "config.jade_integration.showCombinations": "显示组合",
+  "config.jade_integration.showMounts": "显示挂载效果"
+
+
+
 }
