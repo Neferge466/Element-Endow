@@ -1,5 +1,6 @@
 package com.element_endow.api;
 
+import com.element_endow.data.ElementDataService;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -25,6 +26,12 @@ public interface IElementSystem {
     boolean hasElement(LivingEntity entity, String elementId);
     DeferredRegister<Attribute> getAttributeRegister();
     Optional<Attribute> getElementAttribute(String elementId);
+
+
+    /**
+     * 获取数据服务
+     */
+    ElementDataService getDataService();
 
     /**
      * 通过属性ID获取属性实例 (适用于任何已注册的属性)

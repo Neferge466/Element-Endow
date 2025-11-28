@@ -1,0 +1,1 @@
+com.element_endow.integration.kubejs.ElementEndowKubeJSPlugin

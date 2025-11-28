@@ -20,6 +20,7 @@ public class CombinationLoader {
 
     public void loadCombinations() {
         combinations.clear();
+        LOGGER.info("CombinationLoader initialized with empty combinations (will be populated by DataService)");
     }
 
     public void loadFromResources(Map<ResourceLocation, JsonElement> resources) {
@@ -41,6 +42,7 @@ public class CombinationLoader {
                 if (validateCombination(combination)) {
                     combinations.put(combination.id, combination);
                     loadedCount++;
+                    LOGGER.debug("Loaded combination from resources: {}", combination.id);
                 } else {
                     errorCount++;
                 }
@@ -51,12 +53,13 @@ public class CombinationLoader {
         }
 
         if (loadedCount > 0 || errorCount > 0) {
-            LOGGER.info("Loaded {} combinations ({} errors)", loadedCount, errorCount);
+            LOGGER.info("Loaded {} combinations from resources ({} errors)", loadedCount, errorCount);
         }
     }
 
     private boolean validateCombination(ElementCombination combination) {
         if (combination.id == null || combination.id.isEmpty()) {
+            LOGGER.error("Combination missing ID");
             return false;
         }
 
@@ -246,6 +249,7 @@ public class CombinationLoader {
                 return new AttributeModifier(modifierId, modifierName, value, operation);
 
             } catch (Exception e) {
+                LOGGER.error("Failed to create attribute modifier for combination", e);
                 return null;
             }
         }
@@ -262,5 +266,9 @@ public class CombinationLoader {
 
     public Map<String, ElementCombination> getCombinations() {
         return new HashMap<>(combinations);
+    }
+
+    public int getCombinationCount() {
+        return combinations.size();
     }
 }

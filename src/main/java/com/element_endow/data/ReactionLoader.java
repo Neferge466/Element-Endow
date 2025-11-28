@@ -25,7 +25,7 @@ public class ReactionLoader {
 
     public void loadReactions() {
         reactions.clear();
-        LOGGER.info("Loaded {} element reactions", reactions.size());
+        LOGGER.info("ReactionLoader initialized with empty reactions (will be populated by DataService)");
     }
 
     public void loadFromResources(Map<ResourceLocation, JsonElement> resources) {
@@ -47,7 +47,7 @@ public class ReactionLoader {
                 if (validateReaction(reaction)) {
                     reactions.put(reaction.id, reaction);
                     loadedCount++;
-                    LOGGER.debug("Loaded reaction: {}", reaction.id);
+                    LOGGER.debug("Loaded reaction from resources: {}", reaction.id);
                 } else {
                     errorCount++;
                 }
@@ -57,7 +57,7 @@ public class ReactionLoader {
             }
         }
 
-        LOGGER.info("Loaded {} element reactions ({} errors)", loadedCount, errorCount);
+        LOGGER.info("Loaded {} element reactions from resources ({} errors)", loadedCount, errorCount);
     }
 
     private boolean validateReaction(ElementReaction reaction) {
@@ -109,7 +109,7 @@ public class ReactionLoader {
         }
 
         if (triggeredReactions > 0) {
-            LOGGER.debug("Triggered {} attack reactions", triggeredReactions);
+            LOGGER.debug("Triggered {} attack reactions from legacy loader", triggeredReactions);
         }
     }
 
@@ -128,7 +128,7 @@ public class ReactionLoader {
         }
 
         if (triggeredReactions > 0) {
-            LOGGER.debug("Triggered {} defense reactions", triggeredReactions);
+            LOGGER.debug("Triggered {} defense reactions from legacy loader", triggeredReactions);
         }
     }
 
@@ -356,7 +356,7 @@ public class ReactionLoader {
                 return new AttributeModifier(modifierId, modifierName, value, operation);
 
             } catch (Exception e) {
-                LOGGER.error("Failed to create attribute modifier: {}", attribute, e);
+                LOGGER.error("Failed to create attribute modifier for reaction", e);
                 return null;
             }
         }

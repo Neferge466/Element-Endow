@@ -6,6 +6,7 @@ import com.element_endow.core.ElementSystemImpl;
 import com.element_endow.core.ElementRegistry;
 import com.element_endow.event.ElementAttackEventHandler;
 import com.element_endow.event.ElementCombinationHandler;
+import com.element_endow.util.IntegrationValidator;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -34,6 +35,13 @@ public class ElementEndow {
             IEventBus eventBus = MinecraftForge.EVENT_BUS;
             eventBus.register(new ElementAttackEventHandler());
             eventBus.register(new ElementCombinationHandler());
+
+            // 完成系统初始化
+            elementSystem.finalizeInitialization();
+
+            // 执行集成验证
+            IntegrationValidator.validateAllSystems();
+
             LOGGER.info("Element Endow system initialization complete");
 
         } catch (Exception e) {

@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.*;
 
 /**
- * 组合状态缓存
+ * 组合状态缓存 - 已适配新数据服务
  */
 public class CombinationCache {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -71,6 +71,9 @@ public class CombinationCache {
         );
 
         cache.put(entity, entry);
+
+        LOGGER.debug("Updated combination cache for entity {}: {} combinations",
+                entity, combinations.size());
     }
 
     /**
@@ -86,13 +89,16 @@ public class CombinationCache {
      */
     public void invalidate(LivingEntity entity) {
         cache.remove(entity);
+        LOGGER.debug("Invalidated combination cache for entity: {}", entity);
     }
 
     /**
      * 清除所有缓存
      */
     public void clear() {
+        int size = cache.size();
         cache.clear();
+        LOGGER.info("Cleared all combination cache entries: {} entities", size);
     }
 
     /**
@@ -121,11 +127,15 @@ public class CombinationCache {
 
             //新增或移除元素
             if ((currentValue > 0) != (snapshotValue != null && snapshotValue > 0)) {
+                LOGGER.debug("Element {} changed presence state: current={}, snapshot={}",
+                        elementId, currentValue > 0, snapshotValue != null && snapshotValue > 0);
                 return true;
             }
 
             //值变化超过阈值
             if (snapshotValue != null && Math.abs(currentValue - snapshotValue) > ELEMENT_CHANGE_THRESHOLD) {
+                LOGGER.debug("Element {} value changed significantly: {} -> {}",
+                        elementId, snapshotValue, currentValue);
                 return true;
             }
         }
@@ -145,6 +155,11 @@ public class CombinationCache {
 
         public CacheStats(int cachedEntities) {
             this.cachedEntities = cachedEntities;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("CombinationCache{entities=%d}", cachedEntities);
         }
     }
 }

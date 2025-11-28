@@ -33,6 +33,7 @@ public class ElementMountSystem implements IElementMountSystem {
         }
 
         if (!elementSystem.isElementRegistered(elementId)) {
+            LOGGER.warn("Attempted to apply mount for unregistered element: {}", elementId);
             return;
         }
 
@@ -45,6 +46,8 @@ public class ElementMountSystem implements IElementMountSystem {
                 5,
                 entityMountsMap);
         applyMountEffect(target, elementId);
+
+        LOGGER.debug("Applied mount: {} to entity {}, amount: {}, duration: {}", elementId, target, amount, duration);
     }
 
     @Override
@@ -54,6 +57,7 @@ public class ElementMountSystem implements IElementMountSystem {
         }
 
         if (!elementSystem.isElementRegistered(mountData.elementId)) {
+            LOGGER.warn("Attempted to apply advanced mount for unregistered element: {}", mountData.elementId);
             return;
         }
 
@@ -71,6 +75,8 @@ public class ElementMountSystem implements IElementMountSystem {
 
         Map<String, AdvancedMountData> advancedMounts = entityAdvancedMounts.computeIfAbsent(target, k -> new HashMap<>());
         advancedMounts.put(mountData.elementId, mountData);
+
+        LOGGER.debug("Applied advanced mount: {} to entity {}, scaled amount: {}", mountData.elementId, target, scaledAmount);
     }
 
     @Override
@@ -93,6 +99,8 @@ public class ElementMountSystem implements IElementMountSystem {
                 entityAdvancedMounts.remove(entity);
             }
         }
+
+        LOGGER.debug("Removed mount: {} from entity {}", elementId, entity);
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.element_endow.api.ReactionResult;
 import com.element_endow.core.cache.CombinationCache;
 import com.element_endow.core.cache.ConditionCache;
 import com.element_endow.data.CombinationLoader;
+import com.element_endow.data.ElementDataService;
 import com.google.gson.JsonElement;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.effect.MobEffect;
@@ -26,6 +27,7 @@ public class ElementCombinationSystem implements IElementCombinationSystem {
     private final CombinationCache combinationCache;
     private final ConditionCache conditionCache;
     private final Map<LivingEntity, Map<String, UUID>> activeModifiers;
+    private final ElementDataService dataService;
 
     public ElementCombinationSystem(IElementSystem elementSystem) {
         this.elementSystem = elementSystem;
@@ -34,6 +36,27 @@ public class ElementCombinationSystem implements IElementCombinationSystem {
         this.combinationCache = new CombinationCache();
         this.conditionCache = new ConditionCache();
         this.activeModifiers = new WeakHashMap<>();
+
+        //通过elementSystem获取dataService
+        if (elementSystem instanceof ElementSystemImpl) {
+            this.dataService = ((ElementSystemImpl) elementSystem).getDataService();
+            LOGGER.info("ElementCombinationSystem initialized with DataService");
+        } else {
+            this.dataService = null;
+            LOGGER.warn("ElementCombinationSystem: Cannot access DataService, falling back to legacy loader");
+        }
+    }
+
+    //备用构造函数
+    public ElementCombinationSystem(IElementSystem elementSystem, ElementDataService dataService) {
+        this.elementSystem = elementSystem;
+        this.combinationLoader = new CombinationLoader();
+        this.combinationLoader.loadCombinations();
+        this.combinationCache = new CombinationCache();
+        this.conditionCache = new ConditionCache();
+        this.activeModifiers = new WeakHashMap<>();
+        this.dataService = dataService;
+        LOGGER.info("ElementCombinationSystem initialized with provided DataService");
     }
 
     @Override
@@ -52,8 +75,12 @@ public class ElementCombinationSystem implements IElementCombinationSystem {
 
         //获取实体当前元素值
         Map<String, Double> entityElementValues = getEntityElementValues(entity);
+
+        //获取组合数据
+        Map<String, CombinationLoader.ElementCombination> combinations = getCombinations();
+
         //检查所有组合
-        for (CombinationLoader.ElementCombination combination : combinationLoader.getCombinations().values()) {
+        for (CombinationLoader.ElementCombination combination : combinations.values()) {
             if (matchesCombination(entity, entityElementValues, combination)) {
                 newCombinations.add(combination.id);
                 if (!previousCombinations.contains(combination.id)) {
@@ -71,6 +98,20 @@ public class ElementCombinationSystem implements IElementCombinationSystem {
         if (entity.tickCount % 200 == 0) {
             conditionCache.cleanup();
         }
+    }
+
+    /**
+     * 获取组合数据（优先使用数据服务）
+     */
+    private Map<String, CombinationLoader.ElementCombination> getCombinations() {
+        if (dataService != null) {
+            try {
+                return dataService.getAllCombinations();
+            } catch (Exception e) {
+                LOGGER.error("Failed to get combinations from DataService, falling back to legacy loader", e);
+            }
+        }
+        return combinationLoader.getCombinations();
     }
 
     /**
@@ -308,12 +349,38 @@ public class ElementCombinationSystem implements IElementCombinationSystem {
 
     @Override
     public CombinationTriggerResult processAttackTrigger(LivingEntity attacker, LivingEntity target) {
-        return new CombinationTriggerResult();
+        CombinationTriggerResult result = new CombinationTriggerResult();
+        Map<String, CombinationLoader.ElementCombination> combinations = getCombinations();
+
+        //获取攻击者的激活组合
+        Set<String> activeCombinations = combinationCache.getCachedCombinations(attacker);
+
+        for (String combinationId : activeCombinations) {
+            CombinationLoader.ElementCombination combination = combinations.get(combinationId);
+            if (combination != null && combination.attackTrigger != null) {
+                processTriggerEffect(combination.attackTrigger, result, attacker, target, "attack");
+            }
+        }
+
+        return result;
     }
 
     @Override
     public CombinationTriggerResult processDefenseTrigger(LivingEntity attacker, LivingEntity defender) {
-        return new CombinationTriggerResult();
+        CombinationTriggerResult result = new CombinationTriggerResult();
+        Map<String, CombinationLoader.ElementCombination> combinations = getCombinations();
+
+        //获取防御者的激活组合
+        Set<String> activeCombinations = combinationCache.getCachedCombinations(defender);
+
+        for (String combinationId : activeCombinations) {
+            CombinationLoader.ElementCombination combination = combinations.get(combinationId);
+            if (combination != null && combination.defenseTrigger != null) {
+                processTriggerEffect(combination.defenseTrigger, result, defender, attacker, "defense");
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -349,10 +416,18 @@ public class ElementCombinationSystem implements IElementCombinationSystem {
 
     @Override
     public void reloadCombinations() {
-        combinationLoader.loadCombinations();
+        //重新加载组合数据
+        if (dataService != null) {
+            dataService.reloadCombinations();
+        } else {
+            combinationLoader.loadCombinations();
+        }
+
         combinationCache.clear();
         conditionCache.clear();
         activeModifiers.clear();
+
+        LOGGER.info("Combination data reloaded");
     }
 
     public void loadFromResources(Map<ResourceLocation, JsonElement> resources) {
@@ -368,5 +443,12 @@ public class ElementCombinationSystem implements IElementCombinationSystem {
     public void onEntityRemoved(LivingEntity entity) {
         combinationCache.invalidate(entity);
         activeModifiers.remove(entity);
+    }
+
+    /**
+     * 获取数据服务（用于调试和测试）
+     */
+    public ElementDataService getDataService() {
+        return dataService;
     }
 }

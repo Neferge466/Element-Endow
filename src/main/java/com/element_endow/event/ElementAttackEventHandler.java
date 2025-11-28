@@ -40,11 +40,17 @@ public class ElementAttackEventHandler {
             var combinationSystem = elementSystem.getCombinationSystem();
             var mountSystem = elementSystem.getMountSystem();
 
+            // 检查攻击者和目标是否有有效的元素
+            if (!hasValidElements(attacker) && !hasValidElements(target)) {
+                return;
+            }
+
             //处理元素反应和组合触发
             ReactionResult attackResult = reactionSystem.processAttackReaction(attacker, target, event.getAmount());
             ReactionResult defenseResult = reactionSystem.processDefenseReaction(attacker, target, event.getAmount());
             var combinationAttackResult = processCombinationAttackTriggers(attacker, target);
             var combinationDefenseResult = processCombinationDefenseTriggers(attacker, target);
+
             //合并所有结果
             ReactionResult combinedResult = combineResults(attackResult, defenseResult,
                     combinationAttackResult, combinationDefenseResult);
@@ -59,6 +65,19 @@ public class ElementAttackEventHandler {
     }
 
     /**
+     * 检查实体是否有有效的元素
+     */
+    private static boolean hasValidElements(LivingEntity entity) {
+        var elementSystem = ElementSystemAPI.getElementSystem();
+        for (String elementId : elementSystem.getEnabledElements()) {
+            if (elementSystem.hasElement(entity, elementId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * 处理组合攻击触发效果
      */
     private static IElementCombinationSystem.CombinationTriggerResult processCombinationAttackTriggers(LivingEntity attacker, LivingEntity target) {
@@ -67,10 +86,16 @@ public class ElementAttackEventHandler {
         try {
             var combinationSystem = ElementSystemAPI.getElementSystem().getCombinationSystem();
             var activeCombinations = combinationSystem.getActiveCombinations(attacker);
-            var combinationLoader = combinationSystem.getCombinationLoader();
+
+            if (activeCombinations.isEmpty()) {
+                return result;
+            }
+
+            // 使用数据服务获取组合数据
+            var combinations = combinationSystem.getCombinationLoader().getCombinations();
 
             for (String combinationId : activeCombinations) {
-                CombinationLoader.ElementCombination combination = combinationLoader.getCombinations().get(combinationId);
+                CombinationLoader.ElementCombination combination = combinations.get(combinationId);
                 if (combination == null || combination.attackTrigger == null) {
                     continue;
                 }
@@ -157,10 +182,16 @@ public class ElementAttackEventHandler {
         try {
             var combinationSystem = ElementSystemAPI.getElementSystem().getCombinationSystem();
             var activeCombinations = combinationSystem.getActiveCombinations(defender);
-            var combinationLoader = combinationSystem.getCombinationLoader();
+
+            if (activeCombinations.isEmpty()) {
+                return result;
+            }
+
+            // 使用数据服务获取组合数据
+            var combinations = combinationSystem.getCombinationLoader().getCombinations();
 
             for (String combinationId : activeCombinations) {
-                CombinationLoader.ElementCombination combination = combinationLoader.getCombinations().get(combinationId);
+                CombinationLoader.ElementCombination combination = combinations.get(combinationId);
                 if (combination == null || combination.defenseTrigger == null) {
                     continue;
                 }
@@ -335,7 +366,7 @@ public class ElementAttackEventHandler {
         for (var effect : combinationResult.targetEffects) {
             if (effect != null && target != null) {
                 target.addEffect(effect);
-                LOGGER.info("Applied combination target effect: {} to {}",
+                LOGGER.debug("Applied combination target effect: {} to {}",
                         effect.getEffect().getDisplayName().getString(), target);
             }
         }
@@ -344,7 +375,7 @@ public class ElementAttackEventHandler {
         for (var effect : combinationResult.selfEffects) {
             if (effect != null && attacker != null) {
                 attacker.addEffect(effect);
-                LOGGER.info("Applied combination self effect: {} to {}",
+                LOGGER.debug("Applied combination self effect: {} to {}",
                         effect.getEffect().getDisplayName().getString(), attacker);
             }
         }

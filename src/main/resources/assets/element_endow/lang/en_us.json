@@ -85,10 +85,12 @@
   "config.jade_integration": "Jade Integration",
   "config.jade_integration.showElementValues": "Show Element Values",
   "config.jade_integration.showCombinations": "Show Combinations",
-  "config.jade_integration.showMounts": "Show Mount Effects"
+  "config.jade_integration.showMounts": "Show Mount Effects",
 
 
-
+  "config.jade.plugin_element_endow.element_display": "Display Element Values",
+  "config.jade.plugin_element_endow.combination_display": "Display Active Combinations",
+  "config.jade.plugin_element_endow.mount_display": "Display Mount Effects"
 
 
 

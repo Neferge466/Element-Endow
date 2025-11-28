@@ -233,9 +233,9 @@ public class EntityElementBindingLoader {
     public static class EntityElementBinding {
         public String entityType;
         public Map<String, Double> elements = new HashMap<>();
-        public boolean persistent = true;//是否持久化
-        public int priority = 0;//优先级，数值高覆盖数值低的
-        public Map<String, Object> conditions;//应用条件，null表示无条件
+        public boolean persistent = true; // 是否持久化
+        public int priority = 0; // 优先级，数值高覆盖数值低的
+        public Map<String, Object> conditions; // 应用条件，null表示无条件
 
         public EntityElementBinding() {}
 
@@ -249,6 +249,21 @@ public class EntityElementBindingLoader {
          */
         public boolean hasConditions() {
             return conditions != null && !conditions.isEmpty();
+        }
+
+        /**
+         * 获取实体类型的ResourceLocation
+         */
+        public net.minecraft.resources.ResourceLocation getEntityTypeResourceLocation() {
+            return net.minecraft.resources.ResourceLocation.tryParse(entityType);
+        }
+
+        /**
+         * 验证绑定数据的有效性
+         */
+        public boolean isValid() {
+            return entityType != null && !entityType.isEmpty() &&
+                    elements != null && !elements.isEmpty();
         }
     }
 }

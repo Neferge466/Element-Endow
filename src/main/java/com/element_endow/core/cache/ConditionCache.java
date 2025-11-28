@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 条件检查缓存
+ * 优化频繁条件检查的性能
  */
 public class ConditionCache {
     private final Map<ConditionKey, CacheEntry> cache = new ConcurrentHashMap<>();
@@ -55,6 +56,9 @@ public class ConditionCache {
         }
     }
 
+    /**
+     * 使用缓存检查条件
+     */
     public boolean checkWithCache(LivingEntity entity, Map<String, Object> conditions) {
         if (conditions == null || conditions.isEmpty()) {
             return true;
@@ -75,6 +79,9 @@ public class ConditionCache {
         return result;
     }
 
+    /**
+     * 清除所有缓存
+     */
     public void clear() {
         cache.clear();
     }
@@ -85,5 +92,25 @@ public class ConditionCache {
     public void cleanup() {
         long now = System.currentTimeMillis();
         cache.entrySet().removeIf(entry -> entry.getValue().isExpired());
+    }
+
+    /**
+     * 获取缓存统计信息
+     */
+    public CacheStats getStats() {
+        return new CacheStats(cache.size());
+    }
+
+    public static class CacheStats {
+        public final int cachedEntries;
+
+        public CacheStats(int cachedEntries) {
+            this.cachedEntries = cachedEntries;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("ConditionCache{entries=%d}", cachedEntries);
+        }
     }
 }

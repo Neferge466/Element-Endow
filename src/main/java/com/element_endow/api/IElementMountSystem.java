@@ -93,7 +93,7 @@ public interface IElementMountSystem {
         public double factor = 1.0;
         public String basedOn = "stacks";
 
-        //无参构造函数...
+        //无参构造函数
         public ScalingData() {
         }
     }
@@ -103,7 +103,7 @@ public interface IElementMountSystem {
         public double rate = 0.0;
         public int decayStart = 0;
 
-        //无参构造函数...
+        //无参构造函数
         public DecayData() {
         }
     }
