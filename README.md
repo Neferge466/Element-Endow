@@ -1,3 +1,5 @@
+![GitHub License](https://img.shields.io/github/license/Neferge466/Element-Endow?style=for-the-badge&labelColor=yellow&color=white)
+
 ElementEndow Library - Developer Documentation
 
 ElementEndow is a mod that adds an elemental attribute and reaction system to Minecraft. It has now been refactored into a library mod, enabling other developers to easily create extensions or integrate the elemental system into their own mods.
